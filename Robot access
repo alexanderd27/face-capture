@@ -1,0 +1,5 @@
+hr@hr-xavier:~$ ip -4 addr | grep eth | grep 192| grep -oP '(?<=inet\s)\d+(\.\d+){3}'
+192.168.0.150
+hr@hr-xavier:~$ export ROS_MASTER_URI=http://192.168.0.163:11311
+
+http://192.168.0.163:8000/
