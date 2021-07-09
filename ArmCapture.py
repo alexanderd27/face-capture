@@ -91,7 +91,7 @@ class CapturePoseButtonOperator(bpy.types.Operator):
                 b=ARM_ROTATIONS[i]
                 self.set_angle(b, a)
             except:
-       
+        
                 pass
         return {'FINISHED'}
 
