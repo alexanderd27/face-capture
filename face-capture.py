@@ -46,14 +46,14 @@ Functions = {
  'lip_U_L:1' : partial(convert, ['MouthUpperUpLeft', 'MouthPressLeft', 'MouthPucker'], [0.04, 0.04, -0.04]),
  'lip_U_R:1' : partial(convert, ['MouthUpperUpRight', 'MouthPressRight', 'MouthPucker'], [0.04, 0.04, -0.04]),
  'lip_U:1' : partial(convert, ['MouthPucker', 'MouthFunnel'], [-0.04, 0.04]),
- 'mouth_D_L:1' : partial(convert, ['MouthFrownLeft'], [0.08]),
- 'mouth_D_R:1' : partial(convert, ['MouthFrownRight'], [0.08]),
+ 'mouth_D_L:1' : partial(convert, ['MouthFrownLeft'], [0.10]),
+ 'mouth_D_R:1' : partial(convert, ['MouthFrownRight'], [0.10]),
  'mouth_C_L:1' : partial(convert, ['MouthStretchLeft', 'MouthLeft', 'MouthRight', 'MouthPucker', 'MouthFunnel'], [0.12, 0.04, -0.04, -0.04, -0.04]),
  'mouth_C_R:1' : partial(convert, ['MouthStretchRight', 'MouthRight', 'MouthLeft', 'MouthPucker', 'MouthFunnel'], [0.12, 0.04, -0.04, -0.04, -0.04]),
- 'mouth_U_L:1' : partial(convert, ['MouthSmileLeft'], [0.05]),
- 'mouth_U_R:1' : partial(convert, ['MouthSmileLeft'], [0.05]),
- 'brow.inner.L:1' : partial(convert, ['BrowInnerUp'], [0.05]),
- 'brow.inner.R:1' : partial(convert, ['BrowInnerUp'], [0.05]),
+ 'mouth_U_L:1' : partial(convert, ['MouthSmileLeft'], [0.08]),
+ 'mouth_U_R:1' : partial(convert, ['MouthSmileLeft'], [0.08]),
+ 'brow.inner.L:1' : partial(convert, ['BrowInnerUp', 'BrowDownLeft'], [0.06, -0.06]),
+ 'brow.inner.R:1' : partial(convert, ['BrowInnerUp', 'BrowDownRight'], [0.06, -0.06]),
  'brow.C:1' : partial(convert, ['BrowInnerUp'], [0.05]),
  'brow.L:1' : partial(convert, ['BrowOuterUpLeft', 'BrowDownLeft'], [0.06, -0.06]),
  'brow.R:1' : partial(convert, ['BrowOuterUpRight', 'BrowDownRight'], [0.06, -0.06]),
@@ -80,14 +80,14 @@ MirroredFunctions = {
  'lip_U_L:1' : partial(convert, ['MouthUpperUpRight', 'MouthPressRight', 'MouthPucker'], [0.04, 0.04, -0.04]),
  'lip_U_R:1' : partial(convert, ['MouthUpperUpLeft', 'MouthPressLeft', 'MouthPucker'], [0.04, 0.04, -0.04]),
  'lip_U:1' : partial(convert, ['MouthPucker', 'MouthFunnel'], [-0.04, 0.04]),
- 'mouth_D_L:1' : partial(convert, ['MouthFrownRight'], [0.08]),
- 'mouth_D_R:1' : partial(convert, ['MouthFrownLeft'], [0.08]),
+ 'mouth_D_L:1' : partial(convert, ['MouthFrownRight'], [0.10]),
+ 'mouth_D_R:1' : partial(convert, ['MouthFrownLeft'], [0.10]),
  'mouth_C_L:1' : partial(convert, ['MouthStretchRight', 'MouthRight', 'MouthLeft', 'MouthPucker', 'MouthFunnel'], [0.12, 0.04, -0.04, -0.04, -0.04]),
  'mouth_C_R:1' : partial(convert, ['MouthStretchLeft', 'MouthLeft', 'MouthRight', 'MouthPucker', 'MouthFunnel'], [0.12, 0.04, -0.04, -0.04, -0.04]),
- 'mouth_U_L:1' : partial(convert, ['MouthSmileRight'], [0.05]),
- 'mouth_U_R:1' : partial(convert, ['MouthSmileRight'], [0.05]),
- 'brow.inner.L:1' : partial(convert, ['BrowInnerUp'], [0.05]),
- 'brow.inner.R:1' : partial(convert, ['BrowInnerUp'], [0.05]),
+ 'mouth_U_L:1' : partial(convert, ['MouthSmileRight'], [0.08]),
+ 'mouth_U_R:1' : partial(convert, ['MouthSmileRight'], [0.08]),
+ 'brow.inner.L:1' : partial(convert, ['BrowInnerUp', 'BrowDownRight'], [0.06, -0.06]),
+ 'brow.inner.R:1' : partial(convert, ['BrowInnerUp', 'BrowDownLeft'], [0.06, -0.06]),
  'brow.C:1' : partial(convert, ['BrowInnerUp'], [0.05]),
  'brow.L:1' : partial(convert, ['BrowOuterUpRight', 'BrowDownRight'], [0.06, -0.06]),
  'brow.R:1' : partial(convert, ['BrowOuterUpLeft', 'BrowDownLeft'], [0.06, -0.06]),
@@ -96,6 +96,7 @@ MirroredFunctions = {
  'eyelid_UP_L:1' : partial(convert, ['EyeBlinkRight', 'EyeWideRight'], [-0.04, 0.04]), 
  'eyelid_UP_R:1' : partial(convert, ['EyeBlinkLeft', 'EyeWideLeft'], [-0.04, 0.04])
 }
+
 
 class UIProperties(bpy.types.PropertyGroup):
     bpy.types.Scene.recording = bpy.props.BoolProperty(name = "Recording", default = False)
@@ -117,10 +118,12 @@ class UIProperties(bpy.types.PropertyGroup):
 class StartPortButtonOperator(bpy.types.Operator):
     bl_idname = "scene.face_start_port"
     bl_label = "Start Port"
+    
+    last_msg = None
 
     def execute(self, context):
-        t = Thread(target=self.record, daemon=True)
-        t.start()
+        t1 = Thread(target=self.record, daemon=True)
+        t1.start()
 
         return {'FINISHED'}
 
@@ -133,7 +136,7 @@ class StartPortButtonOperator(bpy.types.Operator):
                 print(f'Received empty frame, skipping ...')
                 continue
             frame = FaceFrame.from_raw(data, size)
-            StartRecordButtonOperator.last_msg = frame.blendshapes
+            self.last_msg = frame.blendshapes
             if StartRecordButtonOperator.recording and 1/StartRecordButtonOperator.hz <= (time.time() - start_time):
                 StartRecordButtonOperator.msgs.append(frame.blendshapes)
                 start_time = time.time()
@@ -144,7 +147,6 @@ class StartRecordButtonOperator(bpy.types.Operator):
     bl_label = "Start Recording"
 
     msgs = []
-    last_msg = None
     hz = 0
     recording = False
 
@@ -164,7 +166,7 @@ class StopRecordButtonOperator(bpy.types.Operator):
     def execute(self, context):
         context.scene.recording = False
         StartRecordButtonOperator.recording = False
-        action = bpy.data.actions.new("GST_Recorded")
+        action = bpy.data.actions.new("GST-Recorded")
         for i in range(len(StartRecordButtonOperator.msgs)):
             frame = StartRecordButtonOperator.msgs[i]
             frame_num = i * 48/StartRecordButtonOperator.hz
@@ -200,10 +202,11 @@ class SetNeutralButtonOperator(bpy.types.Operator):
     neutral_pose = None
 
     def execute(self, context):
-        if StartRecordButtonOperator.last_msg:
-            SetNeutralButtonOperator.neutral_pose = StartRecordButtonOperator.last_msg
+        if StartPortButtonOperator.last_msg:
+            self.neutral_pose = StartPortButtonOperator.last_msg
 
         return {'FINISHED'}
+
 
 class ResetButtonOperator(bpy.types.Operator):
     bl_idname = "scene.face_reset_pose"
@@ -234,12 +237,53 @@ class ToggleUpdateButtonOperator(bpy.types.Operator):
         if not bpy.context.scene.liveUpdatePose:
             bpy.context.scene.globalTimerStarted = True
             bpy.context.scene.liveUpdatePose = True
-            bpy.ops.wm.global_timer()
-            bpy.ops.wm.live_update_pose()
+            bpy.ops.wm.face_global_timer()
+            bpy.ops.wm.face_live_update_pose()
         else:
             bpy.context.scene.globalTimerStarted = False
             bpy.context.scene.liveUpdatePose = False
 
+        return {'FINISHED'}
+
+
+class StartNodeButtonOperator(bpy.types.Operator):
+    bl_idname = "scene.face_start_node"
+    bl_label = "Start Node"
+
+    face_publisher = None
+
+    def execute(self, context):
+        try: 
+            import rospy
+            from hr_msgs.msg import TargetPosture
+            rospy.init_node("face_capture")
+        except Exception as e:
+            self.report({"WARNING"}, "Cant start the node with exception {}".format(e))
+            return
+        self.face_publisher = rospy.Publisher('/hr/animation/set_state', TargetPosture, queue_size=4)
+    
+    def stream(self):
+        while True:
+            if ToggleStreamButtonOperator.streaming:
+                tp = TargetPosture()
+                tp.name = []
+                tp.values = []
+                face_publisher.publish(tp)
+
+        return {'FINISHED'}
+
+
+class ToggleStreamButtonOperator(bpy.types.Operator):
+    bl_idname = "scene.face_toggle_stream"
+    bl_label = "Stream on Robot"
+
+    streaming = False
+
+    def execute(self, context):
+        if not self.streaming:
+            self.streaming = True
+        else:
+            self.streaming = False
         return {'FINISHED'}
 
 
@@ -282,12 +326,12 @@ class BLUpdatePose(bpy.types.Operator):
         if not context.scene.liveUpdatePose:
             return self.cancel(context)
         if event.type == 'TIMER':
-            if StartRecordButtonOperator.last_msg:
+            if StartPortButtonOperator.last_msg:
                 if context.scene.mirrored:
                     f = MirroredFunctions
                 else:
                     f = Functions
-                msg = StartRecordButtonOperator.last_msg.copy()
+                msg = StartPortButtonOperator.last_msg.copy()
                 if SetNeutralButtonOperator.neutral_pose:
                     for k in msg.keys():
                         msg[k] -= SetNeutralButtonOperator.neutral_pose[k]
@@ -315,7 +359,7 @@ class BLUpdatePose(bpy.types.Operator):
         wm = context.window_manager
         wm.modal_handler_add(self)
         if not context.scene.globalTimerStarted:
-            bpy.ops.wm.global_timer()
+            bpy.ops.wm.face_global_timer()
         return {'RUNNING_MODAL'}
 
     def cancel(self, context):
@@ -353,6 +397,7 @@ class FaceCapturePanel(view3DPanel, bpy.types.Panel):
         row = layout.row()
         row.prop(bpy.context.scene, "mouthSensitivity")
         row.prop(bpy.context.scene, "lipSensitivity")
+
 
 class FaceRecordPanel(view3DPanel, bpy.types.Panel):
     bl_parent_id = "scene.face_capture_panel"
