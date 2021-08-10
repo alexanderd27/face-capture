@@ -70,6 +70,7 @@ class StartNodetButtonOperator(bpy.types.Operator):
             print('start')
         except Exception as e:
             self.report({"WARNING"}, "Cant start the node with exception {}".format(e))
+
         return {'FINISHED'}
 
     def msg_cb(self, msg):
@@ -93,6 +94,7 @@ class CapturePoseButtonOperator(bpy.types.Operator):
             except:
         
                 pass
+
         return {'FINISHED'}
 
     def set_angle(self, bone, angle):
@@ -110,8 +112,6 @@ class CapturePoseButtonOperator(bpy.types.Operator):
                 bpy.data.objects['AA'].pose.bones[b].rotation_euler.z = angle
         except Exception as e:
             print(e)
-
-
 
 
 class ArmCapturePanel(bpy.types.Panel):
